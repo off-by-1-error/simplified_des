@@ -10,13 +10,9 @@ s_box.append(s1)
 def bit_list_to_int(bits):
     count = 0
     for i in range(0, len(bits)):
-        #print "bits[i]: ", bits[i]
         if bits[i] == 1:
-            #print "comparison passed"
-            #print "adding ", 2**(len(bits)-i-1)
             count += 2**(len(bits)-i-1)
 
-    #print "returning ", count
     return count
 
 def initial_permutation(plain):
@@ -43,7 +39,6 @@ def inverse_permutation(bits):
     p[6] = bits[7]
     p[7] = bits[5]
     
-    #print "p: ", p
     return p
 
 def p10(key_bits):
@@ -70,7 +65,6 @@ def generate_keys(key_bits):
     list_of_keys = []
 
     permuted_key = p10(key_bits)
-    #print "permuted key: ", permuted_key
 
     for i in range(0, 5):
         left_bits.append(permuted_key[i])
@@ -78,16 +72,11 @@ def generate_keys(key_bits):
     for i in range(0, 5):
         right_bits.append(permuted_key[i+5])
 
-    #print "left key bits: ", left_bits
-    #print "right key bits: ", right_bits
-
-    #print "left key bits: ", left_bits
 
     for i in range(0, 2):
         left_bits.append(left_bits.pop(0))
         right_bits.append(right_bits.pop(0))
         temp_key = left_bits + right_bits
-        #print "concatenated shifted keys: ", temp_key
 
 
         key = [0] * 8
@@ -100,11 +89,9 @@ def generate_keys(key_bits):
         key[6] = temp_key[9]
         key[7] = temp_key[8]
 
-        #print "p8 key:", key
         list_of_keys.append(key)
 
 
-    #print "number of keys: ", len(list_of_keys)       
     return list_of_keys
 
 
@@ -125,16 +112,10 @@ def get_s_val(n, s):
     if n & 2 > 0:
         col += 1
 
-    #print "row: ", row
-    #print "col: ", col
-
-    #print "returning: ", s_box[s][row][col]
-
     return s_box[s][row][col]
 
 
 def feistel(bits, key):
-    #print "bits: ", bits
     expanded = []
     expanded = expanded + bits
     expanded.insert(0, bits[3])
@@ -145,20 +126,10 @@ def feistel(bits, key):
     text_val = bit_list_to_int(expanded)
     key_val = bit_list_to_int(key)
 
-    #print "expanded text: ", expanded
-
-    #print "text_val: ", text_val
-    #print "key_val: ", key_val
-
     s_box_index = text_val ^ key_val
-
-    #print "s_box_index: ", s_box_index
 
     right_index = s_box_index & 15
     left_index = s_box_index >> 4
-
-    #print "left_index: ", left_index
-    #print "right_index: ", right_index
 
     s_left = get_s_val(left_index, 0)
     s_right = get_s_val(right_index, 1)
@@ -168,7 +139,6 @@ def feistel(bits, key):
     f_val = f_val << 2
     f_val += s_right
 
-    #print "f_val: ", f_val
 
     return f_val
 
@@ -178,7 +148,6 @@ def feistel(bits, key):
 
 def des(plaintext_bits, key_bits, decrypt = 0): 
     permuted_bits = initial_permutation(plaintext_bits)
-    #print "permuted bits: ", permuted_bits
 
     left_bits = []
     right_bits = []
@@ -189,8 +158,6 @@ def des(plaintext_bits, key_bits, decrypt = 0):
     for i in range(0, 4):
         right_bits.append(permuted_bits[i+4])
 
-    #print "left bits: ", left_bits
-    #print "right bits: ", right_bits
 
     key_list = generate_keys(key_bits)
 
@@ -201,20 +168,13 @@ def des(plaintext_bits, key_bits, decrypt = 0):
 
     for i in range(0, 2):
         if decrypt == 0:
-            #print "left bits: ", left_bits
-            #print "right_bits: ", right_bits
             next_left = right_bits
             next_right = leading_zeros(4, get_bit_array(feistel(right_bits, key_list[i]) ^ bit_list_to_int(left_bits)))
 
 
             left_bits = next_left
             right_bits = next_right
-            #print "next left: ", next_left
-            #print "next right: ", next_right
         else :
-            #print "DECRYPTING\n\n"
-            #print "left bits: ", left_bits
-            #print "right_bits: ", right_bits
  
             next_left = right_bits
             next_right = leading_zeros(4, get_bit_array(feistel(right_bits, key_list[1-i]) ^ bit_list_to_int(left_bits)))
@@ -222,8 +182,6 @@ def des(plaintext_bits, key_bits, decrypt = 0):
 
             left_bits = next_left
             right_bits = next_right
-            #print "next left: ", next_left
-            #print "next right: ", next_right
 
 
     if decrypt != 0:
@@ -231,8 +189,6 @@ def des(plaintext_bits, key_bits, decrypt = 0):
         left_bits = right_bits
         right_bits = tmp
 
-       
-    #print "permuted output: ", left_bits + right_bits
 
     return bit_list_to_int(inverse_permutation(left_bits + right_bits))
 
@@ -283,7 +239,7 @@ def write_bytes_to_file(filename, cipher):
     f.close()
 
 #-----------------------------------------------------------------
-#-----MAIN "FUNCTION"---------------------------------------------
+#---- MAIN -------------------------------------------------------
 #----------------------------------------------------------------- 
 
 key_val = int(sys.argv[3])
@@ -296,60 +252,16 @@ if len(sys.argv) != 5 or (key_val < 0 or key_val > 1023):
 
 d = int(sys.argv[4])
 
-print "decrypt: ", d
 
 plaintext = read_bytes_from_file(sys.argv[1])
-#print "plaintext: ", plaintext
 
 key_bits = get_bit_array(key_val)
 key_bits = leading_zeros(10, key_bits)
-#print "key bits: ",key_bits 
-
-#print "bit list to int test on key: ", bit_list_to_int(key_bits)
-
-plaintext_bits = get_bit_array(ord(plaintext[0]))
-plaintext_bits = leading_zeros(8, plaintext_bits)
-#print "plaintext bits: ", plaintext_bits
-#
-#result = des(plaintext_bits, key_bits)
-#
-#print "encrypting: ", ord(plaintext[0])
-#print "result: ", result
-#
-#
-#print "decrypting: ", result
-#print "result: ", des(leading_zeros(8, (get_bit_array(result))), key_bits, 1)
-#
-
-
-
-
-
-
-feistel(plaintext_bits, key_bits)
-print "size of plaintext: ", len(plaintext)
-print "plaintext: "
-for i in range(0, len(plaintext)):
-    sys.stdout.write(str(ord(plaintext[i])) + " ")
-
-print " "
-
-
 
 cipher = []
 
 for i in range(0, len(plaintext)):
     cipher.append(des(leading_zeros(8, get_bit_array(ord(plaintext[i]))), key_bits, d))
-    #print "cipher ", i, ": ", cipher[i]
-print "size of cipher: ", len(cipher)
-print "cipher vals: "
-for i in range(0, len(cipher)):
-    sys.stdout.write(str(cipher[i])+ " ")
-
-print ""
-
-
-
 write_bytes_to_file(sys.argv[2], cipher)
 
 
